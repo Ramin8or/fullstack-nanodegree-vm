@@ -125,6 +125,97 @@ def testPairings():
     print "8. After one match, players with one win are paired."
 
 
+def testByeGame():
+    deleteMatches()
+    deletePlayers()
+    p1 = registerPlayer("1")
+    p2 = registerPlayer("2")
+    p3 = registerPlayer("3")
+    p4 = registerPlayer("4")
+    p5 = registerPlayer("5")
+    pairings = swissPairings()
+    if len(pairings) != 3:
+        raise ValueError(
+            "For five players, swissPairings should return three pairs.")
+    # Verify that there is one pairing with a player matched with itself (bye game)
+    player_with_bye = 0
+    found_bye = False
+    for each_tuple in pairings:
+        (pid1, name1, pid2, name2) = each_tuple
+        if pid1 == pid2:
+            if found_bye == False:
+                found_bye = True
+                player_with_bye = pid1
+            else:
+                raise ValueError(
+                    "There should only be a single bye game.")
+
+    if found_bye == False:
+        raise ValueError(
+            "No bye game was found.")
+    # Report the bye match for bye player that was just found
+    reportMatch(player_with_bye, player_with_bye)
+    # Look at standings, the top player should have a bye game
+    standings = playerStandings(1, True)
+    (id1, name1, wins1, matches1, byes1) = standings[0]
+    if wins1 != 1 and byes1 != 1:
+        raise ValueError(
+            "Top player did not have a bye game reported.")
+    print "9. Swiss pairing handles bye games for odd number of players."
+
+
+def testNoRematch():
+    deleteMatches()
+    deletePlayers()
+    p1 = registerPlayer("1")
+    p2 = registerPlayer("2")
+    p3 = registerPlayer("3")
+    p4 = registerPlayer("4")
+    p5 = registerPlayer("5")
+    p6 = registerPlayer("6")
+
+    # All odd number players tie each other (1,3,5)
+    reportMatch(p1, p3, True)
+    reportMatch(p1, p5, True)
+    reportMatch(p3, p5, True)
+    reportMatch(p3, p1, True)
+    reportMatch(p5, p1, True)
+    reportMatch(p5, p3, True)
+
+    # All even number players win each other (2,4,6)
+    reportMatch(p2, p4)
+    reportMatch(p4, p2)
+    reportMatch(p2, p6)
+    reportMatch(p6, p2)
+    reportMatch(p4, p6)
+    reportMatch(p6, p4)
+
+    # Verify that the top 3 players names are even numbers, bottom 3 are odd
+    standings = playerStandings()
+    index = 0
+    for row in standings:
+        if index < 3:
+            if (int(row[1]) % 2) != 0:
+                raise ValueError("Top 3 players must be even numbered.")
+        else:
+            if (int(row[1]) % 2) == 0:
+                raise ValueError("Bottom 3 players must be odd numbered.")
+        index += 1
+   
+    # Verify that only odd vs. even pairs are matched, even though even players have higher points
+    pairings = swissPairings()
+    if len(pairings) != 3:
+        raise ValueError(
+            "For six players, swissPairings should return three pairs.")
+    for each_tuple in pairings:
+        (pid1, name1, pid2, name2) = each_tuple
+        if (int(name1) + int(name2)) % 2 == 0:
+            raise ValueError(
+                "Only odd vs. even number players should have been matched.")
+
+    print "10. No rematch is working properly when pairing players."
+
+
 if __name__ == '__main__':
     testDeleteMatches()
     testDelete()
@@ -134,6 +225,8 @@ if __name__ == '__main__':
     testStandingsBeforeMatches()
     testReportMatches()
     testPairings()
+    testByeGame()
+    testNoRematch()
     print "Success!  All tests pass!"
 
 
